@@ -78,6 +78,10 @@ router.get('/home', async (req: AuthRequest, res) => {
         id: true,
         type: true,
         title: true,
+        description: true,
+        link: true,
+        createdAt: true,
+        updatedAt: true,
         tags: {
           select: {
             id: true,
