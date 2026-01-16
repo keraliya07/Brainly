@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Response } from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate } from '../middleware/auth.js';
 import type { AuthRequest } from '../middleware/auth.js';
@@ -154,6 +154,70 @@ router.get('/', async (req: AuthRequest, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+const createTypeRoute = (contentType: string) => {
+  return async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.userId!;
+      const { tagId, search } = req.query;
+
+      const where: any = {
+        userId,
+        type: contentType
+      };
+
+      if (tagId) {
+        where.tags = {
+          some: {
+            id: parseInt(tagId as string)
+          }
+        };
+      }
+
+      if (search) {
+        where.OR = [
+          { title: { contains: search as string, mode: 'insensitive' } },
+          { description: { contains: search as string, mode: 'insensitive' } }
+        ];
+      }
+
+      const contents = await prisma.content.findMany({
+        where,
+        include: {
+          tags: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      res.json({
+        type: contentType,
+        count: contents.length,
+        contents
+      });
+    } catch (error) {
+      console.error(`Get ${contentType} contents error:`, error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+};
+
+router.get('/twitter', createTypeRoute('twitter'));
+router.get('/youtube', createTypeRoute('youtube'));
+router.get('/video', createTypeRoute('video'));
+router.get('/article', createTypeRoute('article'));
+router.get('/podcast', createTypeRoute('podcast'));
+router.get('/book', createTypeRoute('book'));
+router.get('/course', createTypeRoute('course'));
+router.get('/other', createTypeRoute('other'));
 
 router.get('/:id', async (req: AuthRequest, res) => {
   try {

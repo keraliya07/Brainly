@@ -5,7 +5,7 @@ import prisma from '../lib/prisma.js';
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 router.post('/signup', async (req, res) => {
   try {
